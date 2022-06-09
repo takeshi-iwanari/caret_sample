@@ -28,7 +28,9 @@ source ./install/local_setup.bash
 export LD_PRELOAD=$(readlink -f ~/ros2_caret_ws/install/caret_trace/lib/libcaret.so)
 export CARET_IGNORE_NODES="/rviz*"
 export CARET_IGNORE_TOPICS="/clock:/parameter_events"
-ros2 launch caret_sample sample_0.launch.py
+
+ros2 launch caret_sample sample.launch.py app_name:=sample_0
+
 
 # 7. Analyze
 babeltrace ~/.ros/tracing/test_caret/ | cut -d' ' -f 4 | sort -u

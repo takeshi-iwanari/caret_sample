@@ -16,8 +16,16 @@ target_include_directories(sample_0 PRIVATE
   $<INSTALL_INTERFACE:include>
 )
 
+add_executable(sample_sub3pub1 src/sample_sub3pub1.cpp include/caret_sample/node.hpp)
+ament_target_dependencies(sample_sub3pub1  "rclcpp" "std_msgs")
+target_include_directories(sample_sub3pub1 PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+
 install(TARGETS
-  sample_0
+  sample_0 sample_sub3pub1
   DESTINATION lib/${PROJECT_NAME}
 )
 

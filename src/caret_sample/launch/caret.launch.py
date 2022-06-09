@@ -34,7 +34,8 @@ def generate_launch_description():
 
   if caret_session == "":
     dt_now = datetime.datetime.now()
-    caret_session = "caret_sample_" + dt_now.strftime("%Y%m%d-%H%M%S")
+    # caret_session = "caret_sample_" + dt_now.strftime("%Y%m%d-%H%M%S")
+    caret_session = "caret_sample"
 
   return launch.LaunchDescription([
       Trace(
