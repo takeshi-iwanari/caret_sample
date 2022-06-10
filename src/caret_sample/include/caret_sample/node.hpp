@@ -112,6 +112,39 @@ private:
   int count_store_;
 };
 
+class NodeSubStorePubTimer : public rclcpp::Node
+{
+public:
+  NodeSubStorePubTimer(std::string node_name, std::string sub_topic_name, std::string pub_topic_name, int period_ms = 10, int latency_ms = 2)
+  : Node(node_name), period_ms_(period_ms), count_store_(0), last_data_(0)
+  {
+    pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
+    sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
+      [=](std_msgs::msg::Int32::UniquePtr msg)
+      {
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
+        count_store_++;
+        last_data_ = msg->data;
+      });
+    timer_ = create_wall_timer(std::chrono::milliseconds(period_ms),[=]()
+      {
+        auto msg = std_msgs::msg::Int32();
+        msg.data = last_data_;
+        count_store_ = 0;
+        last_data_ = 0;
+        pub_->publish(msg);
+      });
+  }
+
+private:
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  const int period_ms_;
+  int count_store_;
+  int last_data_;
+};
+
 class NodeSub3Pub1 : public rclcpp::Node
 {
 public:

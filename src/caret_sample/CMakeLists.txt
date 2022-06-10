@@ -22,6 +22,9 @@ endfunction()
 create_sample("sample_0")
 create_sample("sample_sub3pub1")
 create_sample("sample_store")
+create_sample("sample_huge_latency")
+create_sample("sample_store_timer_1")
+create_sample("sample_store_timer_2")
 
 install(
   DIRECTORY launch

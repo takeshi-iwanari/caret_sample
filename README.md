@@ -1,3 +1,4 @@
+# How to Run
 ```sh
 # 1. Install CARET
 ## Follow the instruction: https://tier4.github.io/CARET_doc/latest/
@@ -36,3 +37,19 @@ ros2 launch caret_sample sample.launch.py app_name:=sample_0
 babeltrace ~/.ros/tracing/test_caret/ | cut -d' ' -f 4 | sort -u
 ## Open tutorial.ipynb in jupyter-lab or VSCode
 ```
+
+# Cases
+- Nodes structure
+    - straight
+    - store
+    - sub3pub1
+    - store_timer
+- Timing
+    - huge latency
+    - huge latency (>QoS Size)
+- SingleThread
+- Process
+- CallbackGroup
+- Other
+    - variable passing
+    - callback chain
