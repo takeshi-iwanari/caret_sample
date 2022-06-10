@@ -3,13 +3,23 @@
 #include <chrono>
 #include <memory>
 #include <vector>
+#include <random>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/int32.hpp"
 
-namespace Node {
+namespace SampleNode {
 
 static constexpr int QOS_HISTORY_SIZE = 10;
+
+std::chrono::nanoseconds make_jitter(int time_ms, double jitter = 0.2)
+{
+  std::random_device seed_gen;
+  std::mt19937 engine(seed_gen());
+  std::uniform_real_distribution<> dist(time_ms * (1.0 - jitter), time_ms * (1.0 + jitter));
+  double time_jitter_ms = dist(engine);
+  return std::chrono::nanoseconds(static_cast<int>(time_jitter_ms * 1e6));
+}
 
 class NodePub : public rclcpp::Node
 {
@@ -18,9 +28,9 @@ public:
   : Node(node_name), count_(0)
   {
     pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
-    timer_ = create_wall_timer(std::chrono::milliseconds(period_ms),[=]()
+    timer_ = create_wall_timer(make_jitter(period_ms, 0.1),[=]()
       {
-        rclcpp::sleep_for(std::chrono::milliseconds(latency_ms));
+        rclcpp::sleep_for(make_jitter(latency_ms));
         auto msg = std_msgs::msg::Int32();
         msg.data = count_++;
         pub_->publish(msg);
@@ -42,7 +52,7 @@ public:
     sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
       [=](std_msgs::msg::Int32::UniquePtr msg)
       {
-        rclcpp::sleep_for(std::chrono::milliseconds(latency_ms));
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
         RCLCPP_INFO(this->get_logger(), "data = %d", msg->data);
       });
   }
@@ -62,7 +72,7 @@ public:
     sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
       [=](std_msgs::msg::Int32::UniquePtr msg)
       {
-        rclcpp::sleep_for(std::chrono::milliseconds(latency_ms));
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
         auto msg_pub = std_msgs::msg::Int32();
         msg_pub.data = msg->data;
         pub_->publish(msg_pub);
@@ -74,19 +84,19 @@ private:
   rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_;
 };
 
-class NodeSub3Pub : public rclcpp::Node
+class NodeSub3Pub1 : public rclcpp::Node
 {
 public:
-  NodeSub3Pub(std::string node_name, std::string sub_topic_name_0, std::string sub_topic_name_1, std::string sub_topic_name_2, std::string pub_topic_name)
+  NodeSub3Pub1(std::string node_name, std::string sub_topic_name_0, std::string sub_topic_name_1, std::string sub_topic_name_2, std::string pub_topic_name)
   : Node(node_name), stored_data_num_(0), stored_data_sum_(0)
   {
     pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
 
-    std::function<void(const std_msgs::msg::Int32::UniquePtr)> cb_0 = std::bind(&NodeSub3Pub::topic_callback, this, std::placeholders::_1, 0);
+    std::function<void(const std_msgs::msg::Int32::UniquePtr)> cb_0 = std::bind(&NodeSub3Pub1::topic_callback, this, std::placeholders::_1, 0);
     sub_0_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name_0, QOS_HISTORY_SIZE, cb_0);
-    std::function<void(const std_msgs::msg::Int32::UniquePtr)> cb_1 = std::bind(&NodeSub3Pub::topic_callback, this, std::placeholders::_1, 1);
+    std::function<void(const std_msgs::msg::Int32::UniquePtr)> cb_1 = std::bind(&NodeSub3Pub1::topic_callback, this, std::placeholders::_1, 1);
     sub_1_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name_1, QOS_HISTORY_SIZE, cb_1);
-    std::function<void(const std_msgs::msg::Int32::UniquePtr)> cb_2 = std::bind(&NodeSub3Pub::topic_callback, this, std::placeholders::_1, 2);
+    std::function<void(const std_msgs::msg::Int32::UniquePtr)> cb_2 = std::bind(&NodeSub3Pub1::topic_callback, this, std::placeholders::_1, 2);
     sub_2_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name_2, QOS_HISTORY_SIZE, cb_2);
   }
 
