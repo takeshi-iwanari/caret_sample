@@ -28,7 +28,7 @@ public:
   : Node(node_name), count_(0)
   {
     pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
-    timer_ = create_wall_timer(make_jitter(period_ms, 0.1),[=]()
+    timer_ = create_wall_timer(std::chrono::milliseconds(period_ms),[=]()
       {
         rclcpp::sleep_for(make_jitter(latency_ms));
         auto msg = std_msgs::msg::Int32();
@@ -82,6 +82,34 @@ public:
 private:
   rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_;
   rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_;
+};
+
+class NodeSubStorePub : public rclcpp::Node
+{
+public:
+  NodeSubStorePub(std::string node_name, std::string sub_topic_name, std::string pub_topic_name, int num_store = 3, int latency_ms = 2)
+  : Node(node_name), num_store_(num_store), count_store_(0)
+  {
+    pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
+    sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
+      [=](std_msgs::msg::Int32::UniquePtr msg)
+      {
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
+        count_store_++;
+        if (count_store_ == num_store_) {
+          count_store_ = 0;
+          auto msg_pub = std_msgs::msg::Int32();
+          msg_pub.data = msg->data;
+          pub_->publish(msg_pub);
+        }
+      });
+  }
+
+private:
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_;
+  const int num_store_;
+  int count_store_;
 };
 
 class NodeSub3Pub1 : public rclcpp::Node

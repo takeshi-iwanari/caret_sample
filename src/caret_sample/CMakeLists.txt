@@ -21,6 +21,7 @@ endfunction()
 
 create_sample("sample_0")
 create_sample("sample_sub3pub1")
+create_sample("sample_store")
 
 install(
   DIRECTORY launch
