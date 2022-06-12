@@ -1,0 +1,5 @@
+networkx
+dearpygui
+graphviz
+pygraphviz
+pyyaml
