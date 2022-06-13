@@ -13,7 +13,7 @@ def generate_launch_description():
   launch_args = [
     DeclareLaunchArgument(
       "app_name",
-      default_value="sample_0"
+      default_value="sample_straight"
     ),
   ]
 
