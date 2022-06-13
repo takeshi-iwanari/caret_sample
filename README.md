@@ -1,4 +1,4 @@
-# Samples for CARET analysis
+# Samples for CARET Analysis
 ## How to Run
 ```sh
 # 1. Install CARET
@@ -40,17 +40,12 @@ babeltrace ~/.ros/tracing/test_caret/ | cut -d' ' -f 4 | sort -u
 ```
 
 ## Cases
-- Nodes structure
+- Node structure
     - straight
     - store
-    - sub3pub1
-    - store_timer
+    - concat
 - Timing
     - huge latency
-    - huge latency (>QoS Size)
-- SingleThread
-- Process
-- CallbackGroup
-- Other
-    - variable passing
-    - callback chain
+- context_type
+    - use_latest_message
+    - callback_chain (variable_passings)
