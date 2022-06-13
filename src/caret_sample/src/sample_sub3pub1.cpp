@@ -18,9 +18,9 @@ int main(int argc, char * argv[])
   std::vector<std::shared_ptr<rclcpp::Node>> node_list;
 
   node_list.emplace_back(std::make_shared<SampleNode::NodePub>("node_src", "/topic_src", 10, 0));
-  node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_src0", "/topic_src", "/topic_src_0", 2));
-  node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_src1", "/topic_src", "/topic_src_1", 4));
-  node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_src2", "/topic_src", "/topic_src_2", 6));
+  node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_src_0", "/topic_src", "/topic_src_0", 2));
+  node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_src_1", "/topic_src", "/topic_src_1", 4));
+  node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_src_2", "/topic_src", "/topic_src_2", 6));
 
   node_list.emplace_back(std::make_shared<SampleNode::NodeSub3Pub1>("node_sub3pub1", "/topic_src_0", "/topic_src_1", "/topic_src_2", "/topic_sub3pub1"));
   
