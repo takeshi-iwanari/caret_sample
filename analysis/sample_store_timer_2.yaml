@@ -130,14 +130,14 @@ nodes:
     symbol: SampleNode::NodeSubStorePubTimer::NodeSubStorePubTimer(std::__cxx11::basic_string<char,
       std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char,
       std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char,
-      std::char_traits<char>, std::allocator<char> >, int, int)::{lambda()#2}
+      std::char_traits<char>, std::allocator<char> >, int, int, int)::{lambda()#2}
   - callback_name: /node_store/callback_1
     callback_type: subscription_callback
     topic_name: /topic_1
     symbol: SampleNode::NodeSubStorePubTimer::NodeSubStorePubTimer(std::__cxx11::basic_string<char,
       std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char,
       std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char,
-      std::char_traits<char>, std::allocator<char> >, int, int)::{lambda(std::unique_ptr<std_msgs::msg::Int32_<std::allocator<void>
+      std::char_traits<char>, std::allocator<char> >, int, int, int)::{lambda(std::unique_ptr<std_msgs::msg::Int32_<std::allocator<void>
       >, std::default_delete<std_msgs::msg::Int32_<std::allocator<void> > > >)#1}
   variable_passings:
   - callback_name_write: UNDEFINED

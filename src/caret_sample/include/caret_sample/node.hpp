@@ -115,7 +115,7 @@ private:
 class NodeSubStorePubTimer : public rclcpp::Node
 {
 public:
-  NodeSubStorePubTimer(std::string node_name, std::string sub_topic_name, std::string pub_topic_name, int period_ms = 10, int latency_ms = 2)
+  NodeSubStorePubTimer(std::string node_name, std::string sub_topic_name, std::string pub_topic_name, int period_ms = 10, int latency_ms = 2, int latency_timer_ms = 1)
   : Node(node_name), period_ms_(period_ms), count_store_(0), last_data_(0)
   {
     pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
@@ -128,6 +128,7 @@ public:
       });
     timer_ = create_wall_timer(std::chrono::milliseconds(period_ms),[=]()
       {
+        rclcpp::sleep_for(make_jitter(latency_timer_ms, 0.2));
         auto msg = std_msgs::msg::Int32();
         msg.data = last_data_;
         count_store_ = 0;
@@ -189,7 +190,7 @@ class NodeSub1PubTimer3 : public rclcpp::Node
 {
 public:
   NodeSub1PubTimer3(std::string node_name, std::string sub_topic_name, std::string pub_topic_name_0, std::string pub_topic_name_1, std::string pub_topic_name_2,
-    int period_ms_0 = 100, int period_ms_1 = 100, int period_ms_2 = 100)
+    int period_ms_0 = 100, int period_ms_1 = 100, int period_ms_2 = 100, int latency_ms = 2, int latency_timer_ms = 1)
   : Node(node_name), period_ms_0_(period_ms_0), period_ms_1_(period_ms_1), period_ms_2_(period_ms_2), last_data_(0)
   {
     pub_0_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name_0, QOS_HISTORY_SIZE);
@@ -198,22 +199,26 @@ public:
     sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
       [=](std_msgs::msg::Int32::UniquePtr msg)
       {
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
         last_data_ = msg->data;
       });
     timer_0_ = create_wall_timer(std::chrono::milliseconds(period_ms_0_),[=]()
       {
+        rclcpp::sleep_for(make_jitter(latency_timer_ms, 0.2));
         auto msg = std_msgs::msg::Int32();
         msg.data = last_data_;
         pub_0_->publish(msg);
       });
     timer_1_ = create_wall_timer(std::chrono::milliseconds(period_ms_1_),[=]()
       {
+        rclcpp::sleep_for(make_jitter(latency_timer_ms, 0.2));
         auto msg = std_msgs::msg::Int32();
         msg.data = last_data_;
         pub_1_->publish(msg);
       });
     timer_2_ = create_wall_timer(std::chrono::milliseconds(period_ms_2_),[=]()
       {
+        rclcpp::sleep_for(make_jitter(latency_timer_ms, 0.2));
         auto msg = std_msgs::msg::Int32();
         msg.data = last_data_;
         pub_2_->publish(msg);

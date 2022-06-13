@@ -261,23 +261,23 @@ nodes:
   publishes:
   - topic_name: /topic_dst_1
     callback_names:
-    - UNDEFINED
+    - /node_sub1pubtimer3/callback_0
   - topic_name: /topic_dst_2
     callback_names:
-    - UNDEFINED
+    - /node_sub1pubtimer3/callback_1
   - topic_name: /topic_dst_3
     callback_names:
-    - UNDEFINED
+    /node_sub1pubtimer3/callback_2
   subscribes:
   - topic_name: /topic_1
     callback_name: /node_sub1pubtimer3/callback_3
   message_contexts:
-  - context_type: use_latest_message
+  - context_type: callback_chain
     subscription_topic_name: /topic_1
     publisher_topic_name: /topic_dst_1
-  - context_type: use_latest_message
+  - context_type: callback_chain
     subscription_topic_name: /topic_1
     publisher_topic_name: /topic_dst_2
-  - context_type: use_latest_message
+  - context_type: callback_chain
     subscription_topic_name: /topic_1
     publisher_topic_name: /topic_dst_3
