@@ -7,6 +7,8 @@ def string_name(name):
     return name
 
 def caret2networkx(filename, load_all=True):
+    node_name_list = []
+
     topic_pub_dict = {
         # "/topic_0": ["/node_0"],
     }
@@ -21,6 +23,7 @@ def caret2networkx(filename, load_all=True):
             nodes = yml['nodes']
             for node in nodes:
                 node_name = string_name(node['node_name'])
+                node_name_list.append(node_name)
                 if 'publishes' in node:
                     publishes = node['publishes']
                     for publish in publishes:
@@ -50,6 +53,7 @@ def caret2networkx(filename, load_all=True):
                 print('named_paths not found')
 
     G = nx.DiGraph()
+    # G.add_nodes_from(node_name_list)
 
     for topic, node_pub_list in topic_pub_dict.items():
         if topic in topic_sub_dict:
@@ -61,6 +65,8 @@ def caret2networkx(filename, load_all=True):
             for node_sub in node_sub_list:
                 # print(topic, node_pub, node_sub)
                 G.add_edge(node_pub, node_sub, label=string_name(topic))
+
+    print('len(connected_nodes) = ' + str(len(G.nodes)) + ', len(nodes) = ' + str(len(node_name_list)))
 
     return G
 

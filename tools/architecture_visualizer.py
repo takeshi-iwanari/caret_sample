@@ -9,9 +9,8 @@ if __name__ == '__main__':
     parser.add_argument('--architecture_yaml_file', type=str, default='architecture.yaml', help='Architecture (yaml) file path. default=architecture.yaml')
     parser.add_argument('--target_path', type=str, default='all', help='Specify path to be loaded. default=all')
     args = parser.parse_args()
-    load_all = (args.target_path == 'all')
 
-    G = caret2networkx(args.architecture_yaml_file, load_all)
+    G = caret2networkx(args.architecture_yaml_file, args.target_path == 'all')
 
     # layout = nx.spring_layout(G)
     # layout = nx.nx_pydot.graphviz_layout(G, prog='dot')
@@ -19,10 +18,13 @@ if __name__ == '__main__':
     for key, val in layout.items():
         layout[key] = list(val)
 
+    window_size = [1920, 1080]
+    graph_size = window_size if len(G.nodes) < 20 else [n * 3 for n in window_size]
+
     # Draw the graph using Dear PyGui Node Editor
     dpg.create_context()
-    networkx2dearpygui(G, layout, 1920, 1080, 1920 * 3 if load_all else 1920, 1080 * 3 if load_all else 1080)
-    dpg.create_viewport(title='CARET Visualizer', width=1920, height=1080)
+    networkx2dearpygui(G, layout, window_size[0], window_size[1], graph_size[0], graph_size[1])
+    dpg.create_viewport(title='CARET Architecture Visualizer', width=graph_size[0], height=graph_size[1])
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.start_dearpygui()
