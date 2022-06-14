@@ -17,11 +17,11 @@ int main(int argc, char * argv[])
 
   std::vector<std::shared_ptr<rclcpp::Node>> node_list;
 
-  node_list.emplace_back(std::make_shared<SampleNode::NodePub>("node_src", "/topic_src"));
+  node_list.emplace_back(std::make_shared<SampleNode::NodePub>("node_src", "/topic_src", 10, 2));
   node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_1", "/topic_src", "/topic_1"));
   node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_2", "/topic_1", "/topic_2"));
   node_list.emplace_back(std::make_shared<SampleNode::NodeSubPub>("node_3", "/topic_2", "/topic_dst"));
-  node_list.emplace_back(std::make_shared<SampleNode::NodeSub>("node_dst", "/topic_dst"));
+  node_list.emplace_back(std::make_shared<SampleNode::NodeSub>("node_dst", "/topic_dst", 4));
 
   for (auto & node : node_list) {
     executor->add_node(node);

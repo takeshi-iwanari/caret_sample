@@ -78,7 +78,7 @@ nodes:
   callbacks:
   - callback_name: /node_src/callback_0
     callback_type: timer_callback
-    period_ns: 10000000
+    period_ns: 20000000
     symbol: SampleNode::NodePub::NodePub(std::__cxx11::basic_string<char, std::char_traits<char>,
       std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>,
       std::allocator<char> >, int, int)::{lambda()#1}

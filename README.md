@@ -44,6 +44,7 @@ babeltrace ~/.ros/tracing/test_caret/ | cut -d' ' -f 4 | sort -u
     - straight
     - store
     - concat
+    - spread
 - Timing
     - huge latency
 - context_type
