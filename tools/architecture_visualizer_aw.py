@@ -73,9 +73,7 @@ if __name__ == '__main__':
     layout = allocate_all_modules(G, args.module_setting_file)
 
     window_size = [1920, 1080]
-    # graph_size = window_size if len(G.nodes) < 20 else [n * 3 for n in window_size]
-    graph_size = window_size
-    # graph_size = [int(1920 / 2), int(1080 / 2)]
+    graph_size = [int(1920 * 0.8), int(1080 * 0.8)]
 
     # Draw the graph using Dear PyGui Node Editor
     dpg.create_context()
