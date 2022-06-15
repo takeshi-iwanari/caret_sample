@@ -37,23 +37,31 @@ def networkx2dearpygui(G, layout, window_width=1920, window_height=1080, graph_w
             node_edge_dict[edge[0]][0].add('out')
             node_edge_dict[edge[1]][1].add('in')
 
-    # Convert layout ([-1, 1] -> [0, width])
-    layout_np = np.array(list(layout.values()))
-    layout_min, layout_max = layout_np.min(0), layout_np.max(0)
+    # Convert layout ([0, 1.0] -> [0, width])
     for pos in layout.values():
-        pos[0] -= layout_min[0]
-        pos[0] /= (layout_max[0] - layout_min[0])
-        pos[1] -= layout_min[1]
-        pos[1] /= (layout_max[1] - layout_min[1])
-        pos[1] = 1 - pos[1]
         pos[0] *= graph_width
         pos[1] *= graph_height
 
+    with dpg.font_registry():
+        default_font = -1
+        try:
+            default_font = dpg.add_font("/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf", 15)
+        except:
+            print('Failed to load font')
+
     with dpg.window(width=window_width, height=window_height):
-        with dpg.node_editor(width=graph_width, height=graph_height):
+        with dpg.node_editor(width=window_width, height=window_height):
             dpg_id_dict = {}    # {"nodename_edgename": id}
+
             for node_name in node_list:
-                with dpg.node(label=replace_nodename(node_name), pos=layout[node_name]):
+                with dpg.node(label=replace_nodename(node_name), pos=layout[node_name]) as n_id:
+                    if 'color' in G.nodes[node_name]:
+                        with dpg.theme() as theme_id:
+                            with dpg.theme_component(dpg.mvNode):
+                                dpg.add_theme_color( dpg.mvNodeCol_TitleBar, G.nodes[node_name]['color'], category = dpg.mvThemeCat_Nodes)
+                        dpg.bind_item_theme(n_id, theme_id)
+                    if default_font != -1:
+                        dpg.bind_item_font(n_id, default_font)
                     for edge_in in node_edge_dict[node_name][1]:
                         with dpg.node_attribute() as id:
                             dpg_id_dict[node_name + edge_in] = id
