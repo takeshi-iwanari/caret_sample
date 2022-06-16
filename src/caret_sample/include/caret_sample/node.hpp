@@ -233,5 +233,65 @@ private:
   int last_data_;
 };
 
+class NodeFeedbackFormer : public rclcpp::Node
+{
+public:
+  NodeFeedbackFormer(std::string node_name, std::string sub_topic_name, std::string sub_feedback_topic_name, std::string pub_topic_name, int latency_ms = 2)
+  : Node(node_name), data_(0)
+  {
+    pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
+    sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
+      [=](std_msgs::msg::Int32::UniquePtr msg)
+      {
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
+        auto msg_pub = std_msgs::msg::Int32();
+        msg_pub.data = (int)((msg->data + data_) / 2);
+        pub_->publish(msg_pub);
+      });
+    sub_feedback_ = create_subscription<std_msgs::msg::Int32>(sub_feedback_topic_name, QOS_HISTORY_SIZE,
+      [=](std_msgs::msg::Int32::UniquePtr msg)
+      {
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
+        data_ = msg->data;
+      });
+  }
+
+private:
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_feedback_;
+  int data_;
+};
+
+class NodeFeedbackLatter : public rclcpp::Node
+{
+public:
+  NodeFeedbackLatter(std::string node_name, std::string sub_topic_name, std::string pub_topic_name, std::string pub_feedback_topic_name, int latency_ms = 2)
+  : Node(node_name), data_(0)
+  {
+    pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
+    pub_feedback_ = create_publisher<std_msgs::msg::Int32>(pub_feedback_topic_name, QOS_HISTORY_SIZE);
+    sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
+      [=](std_msgs::msg::Int32::UniquePtr msg)
+      {
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
+        auto msg_pub = std_msgs::msg::Int32();
+        msg_pub.data = msg->data;
+        pub_->publish(msg_pub);
+        
+        auto msg_pub_feedback = std_msgs::msg::Int32();
+        msg_pub_feedback.data = msg->data;
+        pub_feedback_->publish(msg_pub_feedback);
+      });
+  }
+
+private:
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_;
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_feedback_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_feedback_;
+  int data_;
+};
+
 
 }
