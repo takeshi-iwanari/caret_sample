@@ -94,7 +94,7 @@ class networkx2dearpygui:
 
         self.G = G
 
-        # Associate edge with node
+        ''' Associate edge with node '''
         for node_name in self.G.nodes:
             self.node_edge_dict[node_name] = [set([]), set([])]
         for edge in G.edges:
@@ -108,16 +108,19 @@ class networkx2dearpygui:
 
         dpg.create_context()
         
+        ''' Locate node and link '''
         with dpg.window(width=window_width, height=window_height, no_collapse=True, no_title_bar=True, no_move=True, no_resize=True) as self.window_id:
+            with dpg.handler_registry():
+                dpg.add_mouse_wheel_handler(callback=self.cb_wheel)
             self.make_zoom_table(app_setting['font'], window_width, window_height)
+
             with dpg.node_editor(menubar=False, minimap=True, minimap_location=dpg.mvNodeMiniMap_Location_BottomLeft) as self.nodeeditor_id:
-                with dpg.handler_registry():
-                    dpg.add_mouse_wheel_handler(callback=self.cb_wheel)
                 dpg_id_dict = {}    # {"nodename_edgename": id}
+
+                ''' Add nodes '''
                 for node_name in self.G.nodes:
                     pos = self.G.nodes[node_name]['pos']
                     pos = [pos[0] * self.zoom_config[self.zoom_level][1], pos[1] * self.zoom_config[self.zoom_level][2]]
-
                     with dpg.node(label=replace_nodename(node_name), pos=pos) as node_id:
                         self.dpg_node_id_dict[node_name] = node_id
                         if 'color' in G.nodes[node_name]:
@@ -125,6 +128,7 @@ class networkx2dearpygui:
                                 with dpg.theme_component(dpg.mvNode):
                                     dpg.add_theme_color( dpg.mvNodeCol_TitleBar, G.nodes[node_name]['color'], category = dpg.mvThemeCat_Nodes)
                             dpg.bind_item_theme(node_id, theme_id)
+
                         for edge_in in self.node_edge_dict[node_name][1]:
                             with dpg.node_attribute() as id:
                                 dpg_id_dict[node_name + edge_in] = id
@@ -134,17 +138,26 @@ class networkx2dearpygui:
                                 dpg_id_dict[node_name + edge_out] = id
                                 dpg.add_text(default_value=replace_edgename(edge_out))
 
+                ''' Add links between nodes '''
                 for edge in self.G.edges:
                     if 'label' in G.edges[edge]:
                         label = G.edges[edge]['label']
                         if (edge[1] + label in dpg_id_dict) and (edge[0] + label in dpg_id_dict):
-                            dpg.add_node_link(dpg_id_dict[edge[1] + label], dpg_id_dict[edge[0] + label])
+                            edge_id = dpg.add_node_link(dpg_id_dict[edge[1] + label], dpg_id_dict[edge[0] + label])
                     else:
                         if (edge[1] + 'in' in dpg_id_dict) and (edge[0] + 'out' in dpg_id_dict):
-                            dpg.add_node_link(dpg_id_dict[edge[1] + 'in'], dpg_id_dict[edge[0] + 'out'])
+                            edge_id = dpg.add_node_link(dpg_id_dict[edge[1] + 'in'], dpg_id_dict[edge[0] + 'out'])
 
+                    ''' Link color is the same color as publisher '''
+                    with dpg.theme() as theme_id:
+                        with dpg.theme_component(dpg.mvNodeLink):
+                            dpg.add_theme_color( dpg.mvNodeCol_Link, G.nodes[edge[0]]['color'], category = dpg.mvThemeCat_Nodes)
+                        dpg.bind_item_theme(edge_id, theme_id)
+
+        ''' Update node position and font according to the default zoom level '''
         self.cb_wheel(0, 0)
 
+        ''' Dear PyGui stuffs '''
         dpg.create_viewport(title='CARET Architecture Visualizer', width=window_width, height=window_height)
         dpg.set_viewport_resize_callback(self.cb_resize)
         dpg.setup_dearpygui()
@@ -163,7 +176,6 @@ class networkx2dearpygui:
         window_height = app_data[3]
         dpg.set_item_width(self.window_id, window_width)
         dpg.set_item_height(self.window_id, window_height)
-
 
     def cb_wheel(self, sender, app_data):
         """
