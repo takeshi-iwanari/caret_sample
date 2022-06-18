@@ -1,3 +1,4 @@
+from __future__ import annotations
 import re
 import numpy as np
 import networkx as nx
@@ -5,50 +6,119 @@ import matplotlib.pyplot as plt
 import dearpygui.dearpygui as dpg
 
 def replace_nodename(name):
+    """
+    replace an original node name to a name to be displayed
+    
+    Parameters
+    ----------
+    name : str
+        original node name
+
+    Returns
+    -------
+    display_name : str
+        name to be displayed
+    """
     # name_list = re.split('[/, "]', name)
     # name_list = list(filter(None, name_list))
     # if len(name_list) > 1:
-    #     name = '/' + name_list[0] + '\n/' + name_list[-1]
+    #     display_name = '/' + name_list[0] + '\n/' + name_list[-1]
     # else:
-    #     name = '/' + name_list[0]
-    return name
+    #     display_name = '/' + name_list[0]
+    display_name = name
+    return display_name
 
-def replace_topicname(name):
+def replace_edgename(name):
+    """
+    replace an original edge name to a name to be displayed
+    
+    Parameters
+    ----------
+    name : str
+        original node name
+
+    Returns
+    -------
+    display_name : str
+        name to be displayed
+    """
     # name_list = re.split('[/, "]', name)
     # name_list = list(filter(None, name_list))
-    # name = '/' + name_list[-1]
-    return name
+    # display_name = '/' + name_list[-1]
+    display_name = name
+    return display_name
+
 
 class networkx2dearpygui:
-    window_width = 1920
-    window_height = 1080
-    graph_width = 1920
-    graph_height = 1080
-    layout_normalized = []
-    G = []
-    node_list = []
-    edge_list = []
-    node_edge_dict = {}  # {"node_name": [["/edge_out_name", ], ["/edge_in_name", ]]}
-    dpg_node_id_list = []
+    """
+    Display node graph using Dear PyGui from NetworkX graph
     
-    font_size = 15
-    font_list = {}
+    Attributes
+    ----------
+    G: nx.classes.digraph.DiGraph
+        NetworkX Graph
+    window_width : int
+        Windows size
+    window_height : int
+        Windows size
+    graph_width : int
+        Graph size
+    graph_height : int
+        Graph size
+    node_list: list[str]
+        list of nodes in G
+    edge_list: list[str]
+        list of edges in G
+    node_edge_dict: dict[str, tuple[list[str], list[str]]]
+        association between nod eand edge
+        {"node_name": [["/edge_out_name", ], ["/edge_in_name", ]]}
+    dpg_node_id_dict: dict[str,int]
+        association between node_name and dpg.node_id
+    font_size: int
+        current font size
+    font_list: dict[int, int]
+        association between font_size and dpg_font_id
+    """
 
-    def __init__(self, G, layout_normalized, window_width=1920, window_height=1080, graph_width=1920, graph_height=1080):
+    G: nx.classes.digraph.DiGraph
+    window_width: int = 1920
+    window_height: int = 1080
+    graph_width: int = 1920
+    graph_height: int = 1080
+    node_edge_dict: dict[str, tuple[list[str], list[str]]] = {} 
+    dpg_node_id_dict: dict[str,int] = {}
+    font_size: int = 15
+    font_list: dict[int, int] = {}
+
+    def __init__(self, 
+        G: nx.classes.digraph.DiGraph,
+        window_width: int = 1920, window_height: int = 1080, 
+        graph_width: int = 1920, graph_height: int = 1080):
+        """
+        Parameters
+        ----------
+        G: nx.classes.digraph.DiGraph
+            NetworkX Graph
+        window_width : int,  default 1920
+            Windows size
+        window_height : int,  default 1080
+            Windows size
+        graph_width : int,  default 1920
+            Graph size
+        graph_height : int,  default 1080
+            Graph size
+
+        """
+
+        self.G = G
         self.window_width = window_width
         self.window_height = window_height
         self.graph_width = graph_width
         self.graph_height = graph_height
 
-        # Get node and edge information
-        self.G = G
-        self.node_list = G.nodes
-        self.edge_list = G.edges
-        self.layout_normalized = layout_normalized
-
         # Associate edge with node
-        for node in self.node_list:
-            self.node_edge_dict[node] = [set([]), set([])]
+        for node_name in self.G.nodes:
+            self.node_edge_dict[node_name] = [set([]), set([])]
         for edge in G.edges:
             if 'label' in G.edges[edge]:
                 label = G.edges[edge]['label']
@@ -58,33 +128,32 @@ class networkx2dearpygui:
                 self.node_edge_dict[edge[0]][0].add('out')
                 self.node_edge_dict[edge[1]][1].add('in')
 
-        layout = {}
-        for key, pos in self.layout_normalized.items():
-            layout[key] = [pos[0] * self.graph_width, pos[1] * self.graph_height]
-
         with dpg.window(width=self.window_width, height=self.window_height):
             with dpg.node_editor(width=self.window_width, height=self.window_height):
                 with dpg.handler_registry():
                     dpg.add_mouse_wheel_handler(callback=self.cb_wheel)
                 dpg_id_dict = {}    # {"nodename_edgename": id}
-                for node_name in self.node_list:
-                    with dpg.node(label=replace_nodename(node_name), pos=layout[node_name]) as n_id:
-                        self.dpg_node_id_list.append(n_id)
+                for node_name in self.G.nodes:
+                    pos = self.G.nodes[node_name]['pos']
+                    pos = [pos[0] * self.graph_width, pos[1] * self.graph_height]
+
+                    with dpg.node(label=replace_nodename(node_name), pos=pos) as node_id:
+                        self.dpg_node_id_dict[node_name] = node_id
                         if 'color' in G.nodes[node_name]:
                             with dpg.theme() as theme_id:
                                 with dpg.theme_component(dpg.mvNode):
                                     dpg.add_theme_color( dpg.mvNodeCol_TitleBar, G.nodes[node_name]['color'], category = dpg.mvThemeCat_Nodes)
-                            dpg.bind_item_theme(n_id, theme_id)
+                            dpg.bind_item_theme(node_id, theme_id)
                         for edge_in in self.node_edge_dict[node_name][1]:
                             with dpg.node_attribute() as id:
                                 dpg_id_dict[node_name + edge_in] = id
-                                dpg.add_text(default_value=replace_topicname(edge_in))
+                                dpg.add_text(default_value=replace_edgename(edge_in))
                         for edge_out in self.node_edge_dict[node_name][0]:
                             with dpg.node_attribute(attribute_type=dpg.mvNode_Attr_Output) as id:
                                 dpg_id_dict[node_name + edge_out] = id
-                                dpg.add_text(default_value=replace_topicname(edge_out))
+                                dpg.add_text(default_value=replace_edgename(edge_out))
 
-                for edge in self.edge_list:
+                for edge in self.G.edges:
                     if 'label' in G.edges[edge]:
                         label = G.edges[edge]['label']
                         if (edge[1] + label in dpg_id_dict) and (edge[0] + label in dpg_id_dict):
@@ -104,15 +173,24 @@ class networkx2dearpygui:
 
 
     def cb_wheel(self, sender, app_data):
+        """
+        callback function for mouse wheel in node editor(Dear PyGui)
+        zoom in/out graph according to wheel direction
+        
+        Parameters
+        ----------
+        sender : int
+            see Dear PyGui document
+        app_data : int
+            see Dear PyGui document
+        """    
+
         wheel = int(app_data)
 
         # Update current layout in normalized coordinate
-        layout = []
-        for node_id in self.dpg_node_id_list:
+        for node_name, node_id in self.dpg_node_id_dict.items():
             pos = dpg.get_item_pos(node_id)
-            layout.append([pos[0] / self.graph_width, pos[1] / self.graph_height])
-        for index, key in enumerate(self.layout_normalized):
-            self.layout_normalized[key] = layout[index]
+            self.G.nodes[node_name]['pos'] = [pos[0] / self.graph_width, pos[1] / self.graph_height]
 
         scale = 1.0
         if wheel > 0:
@@ -126,19 +204,20 @@ class networkx2dearpygui:
         self.graph_width *= scale
         self.graph_height *= scale
 
-        layout = []
-        for key, pos in self.layout_normalized.items():
-            layout.append([pos[0] * self.graph_width, pos[1] * self.graph_height])
-
-        for index, node_id in enumerate(self.dpg_node_id_list):
-            dpg.set_item_pos(node_id, layout[index])
+        for node_name, node_id in self.dpg_node_id_dict.items():
+            pos = self.G.nodes[node_name]['pos']
+            pos[0], pos[1] = pos[0] * self.graph_width, pos[1] * self.graph_height
+            dpg.set_item_pos(node_id, pos)
 
         self.update_font()
 
 
     def update_font(self):
+        """
+        Update font used in all nodes according to current font_size
+        """
         if self.font_size in self.font_list:
-            for node_id in self.dpg_node_id_list:
+            for node_id in self.dpg_node_id_dict.values():
                 dpg.bind_item_font(node_id, self.font_list[self.font_size])
 
 if __name__ == '__main__':
