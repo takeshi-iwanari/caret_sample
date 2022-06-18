@@ -36,7 +36,6 @@ def normalize_layout(layout: dict[str,tuple[int,int]]):
     for pos in layout.values():
         pos[0] = (pos[0] - layout_min[0]) / norm_w
         pos[1] = (pos[1] - layout_min[1]) / norm_h
-        pos[1] = 1 - pos[1]
     return layout
 
 def place_node(G: nx.classes.digraph.DiGraph, group_name: str, prog: str = 'dot'):
@@ -106,6 +105,7 @@ def place_node_by_group(G, group_setting):
         for node_name in G.nodes:
             if group_name in node_name:
                 pos = layout[node_name]
+                pos[1] = 1 - pos[1] # 0.0 is top, 1.0 is bottom
                 if direction == 'horizontal':
                     G.nodes[node_name]['pos'] = [offset[0] + pos[1] * offset[2], offset[1] + pos[0] * offset[3]]
                 else:
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     G = caret2networkx(args.architecture_yaml_file, args.target_path)
     G = place_node_by_group(G, group_setting)
 
-    window_size = [1920, 1080]
-    graph_size = [int(1920 * 0.8), int(1080 * 0.8)]
+    
+    graph_size = [int(app_setting['window_size'][0] * 0.8), int(app_setting['window_size'][1] * 0.8)]
 
-    networkx2dearpygui(app_setting, G, window_size[0], window_size[1], graph_size[0], graph_size[1])
+    networkx2dearpygui(app_setting, G, app_setting['window_size'][0], app_setting['window_size'][1])

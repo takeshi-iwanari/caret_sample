@@ -1,5 +1,6 @@
 {
     "app_setting": {
+        "window_size": [1920, 1080],
         "font": "/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf"
     },
     "group_setting": {

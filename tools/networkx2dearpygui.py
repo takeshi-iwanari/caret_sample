@@ -1,5 +1,5 @@
 from __future__ import annotations
-import re
+import textwrap
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -19,13 +19,9 @@ def replace_nodename(name):
     display_name : str
         name to be displayed
     """
-    # name_list = re.split('[/, "]', name)
-    # name_list = list(filter(None, name_list))
-    # if len(name_list) > 1:
-    #     display_name = '/' + name_list[0] + '\n/' + name_list[-1]
-    # else:
-    #     display_name = '/' + name_list[0]
+
     display_name = name.strip('"')
+    display_name = textwrap.fill(display_name, 60)
     return display_name
 
 def replace_edgename(name):
@@ -42,10 +38,9 @@ def replace_edgename(name):
     display_name : str
         name to be displayed
     """
-    # name_list = re.split('[/, "]', name)
-    # name_list = list(filter(None, name_list))
-    # display_name = '/' + name_list[-1]
+    
     display_name = name.strip('"')
+    display_name = textwrap.fill(display_name, 60)
     return display_name
 
 
@@ -57,14 +52,6 @@ class networkx2dearpygui:
     ----------
     G: nx.classes.digraph.DiGraph
         NetworkX Graph
-    window_width : int
-        Windows size
-    window_height : int
-        Windows size
-    graph_width : int
-        Graph size
-    graph_height : int
-        Graph size
     node_list: list[str]
         list of nodes in G
     edge_list: list[str]
@@ -81,20 +68,17 @@ class networkx2dearpygui:
     """
 
     G: nx.classes.digraph.DiGraph
-    window_width: int = 1920
-    window_height: int = 1080
-    graph_width: int = 1920
-    graph_height: int = 1080
     node_edge_dict: dict[str, tuple[list[str], list[str]]] = {} 
     dpg_node_id_dict: dict[str,int] = {}
-    font_size: int = 15
+
+    zoom_level: int = 10
+    zoom_config: list = []
     font_list: dict[int, int] = {}
 
     def __init__(self, 
         app_setting: dict,
         G: nx.classes.digraph.DiGraph,
-        window_width: int = 1920, window_height: int = 1080, 
-        graph_width: int = 1920, graph_height: int = 1080):
+        window_width: int = 1920, window_height: int = 1080):
         """
         Parameters
         ----------
@@ -106,18 +90,9 @@ class networkx2dearpygui:
             Windows size
         window_height : int,  default 1080
             Windows size
-        graph_width : int,  default 1920
-            Graph size
-        graph_height : int,  default 1080
-            Graph size
-
         """
 
         self.G = G
-        self.window_width = window_width
-        self.window_height = window_height
-        self.graph_width = graph_width
-        self.graph_height = graph_height
 
         # Associate edge with node
         for node_name in self.G.nodes:
@@ -132,14 +107,16 @@ class networkx2dearpygui:
                 self.node_edge_dict[edge[1]][1].add('in')
 
         dpg.create_context()
-        with dpg.window(width=self.window_width, height=self.window_height, no_collapse=True, no_title_bar=True, no_move=True, no_resize=True) as self.window_id:
-            with dpg.node_editor(menubar=False, minimap=True, minimap_location=dpg.mvNodeMiniMap_Location_BottomLeft):
+        
+        with dpg.window(width=window_width, height=window_height, no_collapse=True, no_title_bar=True, no_move=True, no_resize=True) as self.window_id:
+            self.make_zoom_table(app_setting['font'], window_width, window_height)
+            with dpg.node_editor(menubar=False, minimap=True, minimap_location=dpg.mvNodeMiniMap_Location_BottomLeft) as self.nodeeditor_id:
                 with dpg.handler_registry():
                     dpg.add_mouse_wheel_handler(callback=self.cb_wheel)
                 dpg_id_dict = {}    # {"nodename_edgename": id}
                 for node_name in self.G.nodes:
                     pos = self.G.nodes[node_name]['pos']
-                    pos = [pos[0] * self.graph_width, pos[1] * self.graph_height]
+                    pos = [pos[0] * self.zoom_config[self.zoom_level][1], pos[1] * self.zoom_config[self.zoom_level][2]]
 
                     with dpg.node(label=replace_nodename(node_name), pos=pos) as node_id:
                         self.dpg_node_id_dict[node_name] = node_id
@@ -166,32 +143,26 @@ class networkx2dearpygui:
                         if (edge[1] + 'in' in dpg_id_dict) and (edge[0] + 'out' in dpg_id_dict):
                             dpg.add_node_link(dpg_id_dict[edge[1] + 'in'], dpg_id_dict[edge[0] + 'out'])
 
-        with dpg.font_registry():
-            for i in range(7, 30):
-                try:
-                    self.font_list[i] = dpg.add_font(app_setting['font'], i)
-                except:
-                    print('Failed to load font')
+        self.cb_wheel(0, 0)
 
-        self.update_font()
-
-        dpg.create_viewport(title='CARET Architecture Visualizer', width=self.window_width, height=self.window_height)
+        dpg.create_viewport(title='CARET Architecture Visualizer', width=window_width, height=window_height)
         dpg.set_viewport_resize_callback(self.cb_resize)
         dpg.setup_dearpygui()
         dpg.show_viewport()
         dpg.start_dearpygui()
         dpg.destroy_context()
-        
+    
+
     def cb_resize(self, sender, app_data):
         """
         callback function for window resized (Dear PyGui)
         change node editer size
         """    
 
-        self.window_width = app_data[2]
-        self.window_height = app_data[3]
-        dpg.set_item_width(self.window_id, self.window_width)
-        dpg.set_item_height(self.window_id, self.window_height)
+        window_width = app_data[2]
+        window_height = app_data[3]
+        dpg.set_item_width(self.window_id, window_width)
+        dpg.set_item_height(self.window_id, window_height)
 
 
     def cb_wheel(self, sender, app_data):
@@ -200,40 +171,70 @@ class networkx2dearpygui:
         zoom in/out graph according to wheel direction
         """    
 
-        wheel = int(app_data)
-
-        # Update current layout in normalized coordinate
+        # Save current layout in normalized coordinate
         for node_name, node_id in self.dpg_node_id_dict.items():
             pos = dpg.get_item_pos(node_id)
-            self.G.nodes[node_name]['pos'] = [pos[0] / self.graph_width, pos[1] / self.graph_height]
+            self.G.nodes[node_name]['pos'] = [pos[0] / self.zoom_config[self.zoom_level][1], pos[1] / self.zoom_config[self.zoom_level][2]]
 
-        scale = 1.0
-        if wheel > 0:
-            if self.font_size < 20:
-                self.font_size = self.font_size + 1
-                scale = 1.1
-        else:
-            if self.font_size > 6:
-                self.font_size = self.font_size - 1
-                scale = 1.0 / 1.1
-        self.graph_width *= scale
-        self.graph_height *= scale
+        if app_data > 0:
+            if self.zoom_level < len(self.zoom_config) - 1:
+                self.zoom_level += 1
+        elif app_data < 0:
+            if self.zoom_level > 0:
+                self.zoom_level -= 1
 
+
+        # Update node position and font size according to new zoom level
         for node_name, node_id in self.dpg_node_id_dict.items():
             pos = self.G.nodes[node_name]['pos']
-            pos[0], pos[1] = pos[0] * self.graph_width, pos[1] * self.graph_height
+            pos[0], pos[1] = pos[0] * self.zoom_config[self.zoom_level][1], pos[1] * self.zoom_config[self.zoom_level][2]
             dpg.set_item_pos(node_id, pos)
-
         self.update_font()
 
 
     def update_font(self):
         """
-        Update font used in all nodes according to current font_size
+        Update font used in all nodes according to current zoom level
         """
-        if self.font_size in self.font_list:
-            for node_id in self.dpg_node_id_dict.values():
-                dpg.bind_item_font(node_id, self.font_list[self.font_size])
+        for node_id in self.dpg_node_id_dict.values():
+            dpg.bind_item_font(node_id, self.zoom_config[self.zoom_level][0])
+
+    def make_zoom_table(self, font_path, window_width: int, window_height: int):
+        with dpg.font_registry():
+            for i in range(7, 20):
+                try:
+                    self.font_list[i] = dpg.add_font(font_path, i)
+                except:
+                    print('Failed to load font')
+        self.zoom_config.append([self.font_list[10], window_width * 0.20, window_height * 0.20])
+        self.zoom_config.append([self.font_list[10], window_width * 0.25, window_height * 0.25])
+        self.zoom_config.append([self.font_list[11], window_width * 0.30, window_height * 0.30])
+        self.zoom_level = len(self.zoom_config) - 1     # default zoom level
+        self.zoom_config.append([self.font_list[11], window_width * 0.35, window_height * 0.35])
+        self.zoom_config.append([self.font_list[12], window_width * 0.40, window_height * 0.40])
+        self.zoom_config.append([self.font_list[12], window_width * 0.45, window_height * 0.45])
+        self.zoom_config.append([self.font_list[13], window_width * 0.50, window_height * 0.50])
+        self.zoom_config.append([self.font_list[13], window_width * 0.55, window_height * 0.55])
+        self.zoom_config.append([self.font_list[14], window_width * 0.60, window_height * 0.60])
+        self.zoom_config.append([self.font_list[14], window_width * 0.65, window_height * 0.65])
+        self.zoom_config.append([self.font_list[14], window_width * 0.70, window_height * 0.70])
+        self.zoom_config.append([self.font_list[15], window_width * 0.75, window_height * 0.75])
+        self.zoom_config.append([self.font_list[15], window_width * 0.80, window_height * 0.80])
+        self.zoom_config.append([self.font_list[15], window_width * 0.85, window_height * 0.85])
+        self.zoom_config.append([self.font_list[16], window_width * 0.90, window_height * 0.90])
+        self.zoom_config.append([self.font_list[16], window_width * 0.95, window_height * 0.95])
+        self.zoom_config.append([self.font_list[16], window_width * 1.00, window_height * 1.00])
+        self.zoom_config.append([self.font_list[17], window_width * 1.10, window_height * 1.10])
+        self.zoom_config.append([self.font_list[17], window_width * 1.15, window_height * 1.15])
+        self.zoom_config.append([self.font_list[17], window_width * 1.20, window_height * 1.20])
+        self.zoom_config.append([self.font_list[17], window_width * 1.25, window_height * 1.25])
+        self.zoom_config.append([self.font_list[17], window_width * 1.30, window_height * 1.30])
+        self.zoom_config.append([self.font_list[17], window_width * 1.35, window_height * 1.35])
+        self.zoom_config.append([self.font_list[18], window_width * 1.40, window_height * 1.40])
+        self.zoom_config.append([self.font_list[18], window_width * 1.45, window_height * 1.45])
+        self.zoom_config.append([self.font_list[18], window_width * 1.50, window_height * 1.50])
+        self.zoom_config.append([self.font_list[18], window_width * 1.60, window_height * 1.60])
+
 
 if __name__ == '__main__':
     G = nx.DiGraph()
