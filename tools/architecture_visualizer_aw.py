@@ -120,11 +120,4 @@ if __name__ == '__main__':
     window_size = [1920, 1080]
     graph_size = [int(1920 * 0.8), int(1080 * 0.8)]
 
-    # Draw the graph using Dear PyGui Node Editor
-    dpg.create_context()
     networkx2dearpygui(G, window_size[0], window_size[1], graph_size[0], graph_size[1])
-    dpg.create_viewport(title='CARET Architecture Visualizer', width=window_size[0], height=window_size[1])
-    dpg.setup_dearpygui()
-    dpg.show_viewport()
-    dpg.start_dearpygui()
-    dpg.destroy_context()

@@ -128,8 +128,9 @@ class networkx2dearpygui:
                 self.node_edge_dict[edge[0]][0].add('out')
                 self.node_edge_dict[edge[1]][1].add('in')
 
-        with dpg.window(width=self.window_width, height=self.window_height):
-            with dpg.node_editor(width=self.window_width, height=self.window_height):
+        dpg.create_context()
+        with dpg.window(width=self.window_width, height=self.window_height, no_collapse=True, no_title_bar=True, no_move=True, no_resize=True) as self.window_id:
+            with dpg.node_editor(menubar=False, minimap=True, minimap_location=dpg.mvNodeMiniMap_Location_BottomLeft):
                 with dpg.handler_registry():
                     dpg.add_mouse_wheel_handler(callback=self.cb_wheel)
                 dpg_id_dict = {}    # {"nodename_edgename": id}
@@ -171,18 +172,29 @@ class networkx2dearpygui:
 
         self.update_font()
 
+        dpg.create_viewport(title='CARET Architecture Visualizer', width=self.window_width, height=self.window_height)
+        dpg.set_viewport_resize_callback(self.cb_resize)
+        dpg.setup_dearpygui()
+        dpg.show_viewport()
+        dpg.start_dearpygui()
+        dpg.destroy_context()
+        
+    def cb_resize(self, sender, app_data):
+        """
+        callback function for window resized (Dear PyGui)
+        change node editer size
+        """    
+
+        self.window_width = app_data[2]
+        self.window_height = app_data[3]
+        dpg.set_item_width(self.window_id, self.window_width)
+        dpg.set_item_height(self.window_id, self.window_height)
+
 
     def cb_wheel(self, sender, app_data):
         """
         callback function for mouse wheel in node editor(Dear PyGui)
         zoom in/out graph according to wheel direction
-        
-        Parameters
-        ----------
-        sender : int
-            see Dear PyGui document
-        app_data : int
-            see Dear PyGui document
         """    
 
         wheel = int(app_data)
