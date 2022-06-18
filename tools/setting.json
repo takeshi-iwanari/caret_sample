@@ -1,0 +1,31 @@
+{
+    "app_setting": {
+        "font": "/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf"
+    },
+    "group_setting": {
+        "/sensing": {
+            "offset": [0.0, 0.0, 2.0, 1.0],
+            "color": [0, 128, 0]
+        },
+        "/localization": {
+            "offset": [0.0, 1.2, 1.0, 0.5],
+            "color": [0, 0, 128]
+        },
+        "/perception": {
+            "offset": [1.8, 1.1, 1.0, 3.0],
+            "color": [128, 128, 0]
+        },
+        "/planning": {
+            "offset": [3.0, 0.5, 1.0, 1.8],
+            "color": [0, 128, 128]
+        },
+        "/control": {
+            "offset": [2.8, -0.3, 0.5, 0.8],
+            "color": [128, 0, 128]
+        },
+        "__others__": {
+            "offset": [0.0, -0.5, 0.0, 0.5],
+            "color": [16, 16, 16]
+        }
+    }
+}

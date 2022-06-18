@@ -25,7 +25,7 @@ def replace_nodename(name):
     #     display_name = '/' + name_list[0] + '\n/' + name_list[-1]
     # else:
     #     display_name = '/' + name_list[0]
-    display_name = name
+    display_name = name.strip('"')
     return display_name
 
 def replace_edgename(name):
@@ -45,7 +45,7 @@ def replace_edgename(name):
     # name_list = re.split('[/, "]', name)
     # name_list = list(filter(None, name_list))
     # display_name = '/' + name_list[-1]
-    display_name = name
+    display_name = name.strip('"')
     return display_name
 
 
@@ -91,12 +91,15 @@ class networkx2dearpygui:
     font_list: dict[int, int] = {}
 
     def __init__(self, 
+        app_setting: dict,
         G: nx.classes.digraph.DiGraph,
         window_width: int = 1920, window_height: int = 1080, 
         graph_width: int = 1920, graph_height: int = 1080):
         """
         Parameters
         ----------
+        app_setting: dict
+            application settings
         G: nx.classes.digraph.DiGraph
             NetworkX Graph
         window_width : int,  default 1920
@@ -166,7 +169,7 @@ class networkx2dearpygui:
         with dpg.font_registry():
             for i in range(7, 30):
                 try:
-                    self.font_list[i] = dpg.add_font("/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf", i)
+                    self.font_list[i] = dpg.add_font(app_setting['font'], i)
                 except:
                     print('Failed to load font')
 

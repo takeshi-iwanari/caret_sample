@@ -4,7 +4,7 @@ import argparse
 import networkx as nx
 import dearpygui.dearpygui as dpg
 from caret2networkx import caret2networkx
-from networkx2dearpygui_with_label import networkx2dearpygui
+from networkx2dearpygui import networkx2dearpygui
 
 def normalize_layout(layout):
     for key, val in layout.items():

@@ -1,12 +1,12 @@
 from __future__ import annotations
-import re
+import os
 import json
 import numpy as np
 import argparse
 import networkx as nx
 import dearpygui.dearpygui as dpg
 from caret2networkx import caret2networkx
-from networkx2dearpygui_with_label import networkx2dearpygui
+from networkx2dearpygui import networkx2dearpygui
 
 def normalize_layout(layout: dict[str,tuple[int,int]]):
     """
@@ -39,17 +39,17 @@ def normalize_layout(layout: dict[str,tuple[int,int]]):
         pos[1] = 1 - pos[1]
     return layout
 
-def place_module(G: nx.classes.digraph.DiGraph, module_name: str, prog: str = 'dot'):
+def place_node(G: nx.classes.digraph.DiGraph, group_name: str, prog: str = 'dot'):
     """
-    Place nodes belonging to module_name.
+    Place nodes belonging to group.
     Normalized position [x, y] is set to G.nodes[node]['pos']
 
     Parameters
     ----------
     G: nx.classes.digraph.DiGraph
         NetworkX Graph
-    module_name: str
-        module name
+    group_name: str
+        group name
     prog: str  (default: 'dot')
         Name of the GraphViz command to use for layout.
         Options depend on GraphViz version but may include:
@@ -62,62 +62,96 @@ def place_module(G: nx.classes.digraph.DiGraph, module_name: str, prog: str = 'd
     """
 
     H = nx.DiGraph()
-    node_list = G.nodes
-    for node in node_list:
-        if module_name in node:
-            H.add_node(node)
-    edge_list = G.edges
-    for edge in edge_list:
-        if module_name in edge[0] and module_name in edge[1]:
+    for node_name in G.nodes:
+        if group_name in node_name:
+            H.add_node(node_name)
+    for edge in G.edges:
+        if group_name in edge[0] and group_name in edge[1]:
             H.add_edge(edge[0], edge[1])
-    layout_in_module = nx.nx_pydot.pydot_layout(H, prog=prog)
-    layout_in_module = normalize_layout(layout_in_module)
-    return layout_in_module
+    layout = nx.nx_pydot.pydot_layout(H, prog=prog)
+    layout = normalize_layout(layout)
+    return layout
 
 
-def place_all_groups(G, module_setting_filepath):
+def place_node_by_group(G, group_setting):
     """
-    Quote name, because pydot requires. https://github.com/pydot/pydot/issues/258
-
-    Parameters
-    ----------
-    name : str
-        original name
-
-    Returns
-    -------
-    modified_name : str
-        name with '"'
+    Place all nodes
+    Nodes belonging to the same group are placed in the same area. The area is specified in group_setting.group_setting
     """
 
-    with open(module_setting_filepath) as f:
-        module_layout_offset = json.load(f)
+    # for node_name in G.nodes:
+        # G.nodes[node_name]['pos'] = [0, 0]
+        # G.nodes[node_name]['color'] = [128, 128, 128]
 
-    for node in G.nodes:
-        G.nodes[node]['pos'] = [0, 0]
+    ''' Add "__other__" if a node doesn't belong to any group to make process easier '''
+    mapping_list = {}
+    for node_name in G.nodes:
+        is_other_node = True
+        for group_name in group_setting.keys():
+            if group_name in node_name:
+                is_other_node = False
+        if is_other_node:
+            mapping_list[node_name] = '"' + '__others__' + node_name.strip('"') + '"'
+        else:
+            mapping_list[node_name] = node_name
+    G = nx.relabel_nodes(G, mapping_list)
 
-    for module_name, property in module_layout_offset.items():
-        layout_in_module = place_module(G, module_name)
-        offset = property['pos']
+    ''' Place nodes and add properties into G '''
+    for group_name, property in group_setting.items():
+        layout = place_node(G, group_name)
+        offset = property['offset']
         color = property['color']
 
-        for node in G.nodes:
-            if module_name in node:
-                pos = layout_in_module[node]
-                G.nodes[node]['pos'] = [offset[0] + pos[0] * offset[2], offset[1] + pos[1] * offset[3]]
-                G.nodes[node]['color'] = color
+        for node_name in G.nodes:
+            if group_name in node_name:
+                pos = layout[node_name]
+                G.nodes[node_name]['pos'] = [offset[0] + pos[0] * offset[2], offset[1] + pos[1] * offset[3]]
+                G.nodes[node_name]['color'] = color
+
+    ''' Remove "__other__" '''
+    mapping_list_swap = {v: k for k, v in mapping_list.items()}
+    G = nx.relabel_nodes(G, mapping_list_swap)
+
+    return G
+
+def load_setting_json(setting_file):
+    """
+    Load JSON setting file
+    Set default values if the file doesn't exist
+    """
+
+    if os.path.isfile(setting_file):
+        with open(setting_file) as f:
+            setting = json.load(f)
+        app_setting = setting['app_setting']
+        group_setting = setting['group_setting']
+    else:
+        app_setting = {
+            "font": "/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf"
+        }
+        group_setting = {
+            "__others__": {
+                "offset": [0.0, 0.0, 1.0, 1.0],
+                "color": [0, 0, 0]
+            }
+
+        }
+    return app_setting, group_setting
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Visualize Node Diagram using Architecture File Created by CARET')
     parser.add_argument('--architecture_yaml_file', type=str, default='architecture.yaml', help='Architecture (yaml) file path. default=architecture.yaml')
     parser.add_argument('--target_path', type=str, default='all_graph', help='Specify path to be loaded. default=all_graph')
-    parser.add_argument('--module_setting_file', type=str, default='module_setting.json', help='default=module_setting.json')
+    parser.add_argument('--setting_file', type=str, default='setting.json', help='default=setting.json')
     args = parser.parse_args()
 
+    app_setting, group_setting = load_setting_json(args.setting_file)
+
     G = caret2networkx(args.architecture_yaml_file, args.target_path)
-    place_all_groups(G, args.module_setting_file)
+    G = place_node_by_group(G, group_setting)
 
     window_size = [1920, 1080]
     graph_size = [int(1920 * 0.8), int(1080 * 0.8)]
 
-    networkx2dearpygui(G, window_size[0], window_size[1], graph_size[0], graph_size[1])
+    networkx2dearpygui(app_setting, G, window_size[0], window_size[1], graph_size[0], graph_size[1])
