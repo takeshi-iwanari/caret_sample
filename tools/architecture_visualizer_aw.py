@@ -99,13 +99,17 @@ def place_node_by_group(G, group_setting):
     ''' Place nodes and add properties into G '''
     for group_name, property in group_setting.items():
         layout = place_node(G, group_name)
+        direction = property['direction']
         offset = property['offset']
         color = property['color']
 
         for node_name in G.nodes:
             if group_name in node_name:
                 pos = layout[node_name]
-                G.nodes[node_name]['pos'] = [offset[0] + pos[0] * offset[2], offset[1] + pos[1] * offset[3]]
+                if direction == 'horizontal':
+                    G.nodes[node_name]['pos'] = [offset[0] + pos[1] * offset[2], offset[1] + pos[0] * offset[3]]
+                else:
+                    G.nodes[node_name]['pos'] = [offset[0] + pos[0] * offset[2], offset[1] + pos[1] * offset[3]]
                 G.nodes[node_name]['color'] = color
 
     ''' Remove "__other__" '''
