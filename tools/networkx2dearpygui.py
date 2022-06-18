@@ -70,6 +70,10 @@ class networkx2dearpygui:
     G: nx.classes.digraph.DiGraph
     node_edge_dict: dict[str, tuple[list[str], list[str]]] = {} 
     dpg_node_id_dict: dict[str,int] = {}
+    dpg_link_id_dict: dict[str,int] = {}
+    dpg_node_theme_color: dict[str,int] = {}
+    dpg_edge_theme_color: dict[str,int] = {}
+    node_selected_dict: dict[str,bool] = {}
 
     zoom_level: int = 10
     zoom_config: list = []
@@ -105,6 +109,9 @@ class networkx2dearpygui:
             else:
                 self.node_edge_dict[edge[0]][0].add('out')
                 self.node_edge_dict[edge[1]][1].add('in')
+        
+        for node_name in self.G.nodes:
+            self.node_selected_dict[node_name] = False
 
         dpg.create_context()
         
@@ -123,12 +130,21 @@ class networkx2dearpygui:
                     pos = [pos[0] * self.zoom_config[self.zoom_level][1], pos[1] * self.zoom_config[self.zoom_level][2]]
                     with dpg.node(label=replace_nodename(node_name), pos=pos) as node_id:
                         self.dpg_node_id_dict[node_name] = node_id
-                        if 'color' in G.nodes[node_name]:
-                            with dpg.theme() as theme_id:
-                                with dpg.theme_component(dpg.mvNode):
-                                    dpg.add_theme_color( dpg.mvNodeCol_TitleBar, G.nodes[node_name]['color'], category = dpg.mvThemeCat_Nodes)
-                            dpg.bind_item_theme(node_id, theme_id)
 
+                        ''' Set color '''
+                        with dpg.theme() as theme_id:
+                            with dpg.theme_component(dpg.mvNode):
+                                dpg.add_theme_color( dpg.mvNodeCol_TitleBar, G.nodes[node_name]['color'] if 'color' in G.nodes[node_name] else [32, 32, 32], category = dpg.mvThemeCat_Nodes)
+                                theme_color = dpg.add_theme_color( dpg.mvNodeCol_NodeBackground, [64, 64, 64], category = dpg.mvThemeCat_Nodes)
+                                self.dpg_node_theme_color[node_name] = theme_color
+                                dpg.bind_item_theme(node_id, theme_id)
+
+                        ''' Set callback '''
+                        with dpg.item_handler_registry() as node_select_handler:
+                            dpg.add_item_clicked_handler(callback=self.cb_node_clicked)
+                            dpg.bind_item_handler_registry(node_id, node_select_handler)
+
+                        ''' Make association dictionary '''
                         for edge_in in self.node_edge_dict[node_name][1]:
                             with dpg.node_attribute() as id:
                                 dpg_id_dict[node_name + edge_in] = id
@@ -142,17 +158,17 @@ class networkx2dearpygui:
                 for edge in self.G.edges:
                     if 'label' in G.edges[edge]:
                         label = G.edges[edge]['label']
-                        if (edge[1] + label in dpg_id_dict) and (edge[0] + label in dpg_id_dict):
-                            edge_id = dpg.add_node_link(dpg_id_dict[edge[1] + label], dpg_id_dict[edge[0] + label])
+                        edge_id = dpg.add_node_link(dpg_id_dict[edge[1] + label], dpg_id_dict[edge[0] + label])
                     else:
-                        if (edge[1] + 'in' in dpg_id_dict) and (edge[0] + 'out' in dpg_id_dict):
-                            edge_id = dpg.add_node_link(dpg_id_dict[edge[1] + 'in'], dpg_id_dict[edge[0] + 'out'])
+                        edge_id = dpg.add_node_link(dpg_id_dict[edge[1] + 'in'], dpg_id_dict[edge[0] + 'out'])
+                    self.dpg_link_id_dict[edge] = edge_id
 
-                    ''' Link color is the same color as publisher '''
+                    ''' Set color. color is the same color as publisher '''
                     with dpg.theme() as theme_id:
                         with dpg.theme_component(dpg.mvNodeLink):
-                            dpg.add_theme_color( dpg.mvNodeCol_Link, G.nodes[edge[0]]['color'], category = dpg.mvThemeCat_Nodes)
-                        dpg.bind_item_theme(edge_id, theme_id)
+                            theme_color = dpg.add_theme_color( dpg.mvNodeCol_Link, G.nodes[edge[0]]['color'], category = dpg.mvThemeCat_Nodes)
+                            self.dpg_edge_theme_color[edge] = theme_color
+                            dpg.bind_item_theme(edge_id, theme_id)
 
         ''' Update node position and font according to the default zoom level '''
         self.cb_wheel(0, 0)
@@ -164,7 +180,6 @@ class networkx2dearpygui:
         dpg.show_viewport()
         dpg.start_dearpygui()
         dpg.destroy_context()
-    
 
     def cb_resize(self, sender, app_data):
         """
@@ -177,11 +192,53 @@ class networkx2dearpygui:
         dpg.set_item_width(self.window_id, window_width)
         dpg.set_item_height(self.window_id, window_height)
 
+
+    def cb_node_clicked(self, sender, app_data):
+        """
+        change connedted node color
+        restore node color when re-clicked
+        """
+        color_pub = [64, 0, 0]
+        color_sub = [ 0, 64, 0]
+        color_def = [64, 64, 64]
+        color_edge = [196, 196, 196]
+        node_id = app_data[1]
+        selected_node_name = [k for k, v in self.dpg_node_id_dict.items() if v == node_id][0]
+
+        for node_name in self.node_selected_dict:
+            publishing_edge_list = [e for e in self.G.edges if node_name in e[0]]
+            publishing_edge_subscribing_node_name_list = [e[1] for e in self.G.edges if e[0] == node_name]
+            subscribing_edge_list = [e for e in self.G.edges if node_name in e[1]]
+            subscribing_edge_publishing_node_name_list = [e[0] for e in self.G.edges if e[1] == node_name]
+            if self.node_selected_dict[node_name]:
+                ''' Disable highlight for all the other nodes'''
+                self.node_selected_dict[node_name] = False
+                for edge_name in publishing_edge_list:
+                    dpg.set_value(self.dpg_edge_theme_color[edge_name], self.G.nodes[node_name]['color'])
+                for pub_node_name in publishing_edge_subscribing_node_name_list:
+                    dpg.set_value(self.dpg_node_theme_color[pub_node_name], color_def)
+                for edge_name in subscribing_edge_list:
+                    dpg.set_value(self.dpg_edge_theme_color[edge_name], self.G.nodes[node_name]['color'])  # todo. incorrect color
+                for sub_node_name in subscribing_edge_publishing_node_name_list:
+                    dpg.set_value(self.dpg_node_theme_color[sub_node_name], color_def)
+
+            elif selected_node_name == node_name:
+                ''' Enable highlight for the selected node '''
+                self.node_selected_dict[node_name] = True
+                for edge_name in publishing_edge_list:
+                    dpg.set_value(self.dpg_edge_theme_color[edge_name], color_edge)
+                for pub_node_name in publishing_edge_subscribing_node_name_list:
+                    dpg.set_value(self.dpg_node_theme_color[pub_node_name], color_pub)
+                for edge_name in subscribing_edge_list:
+                    dpg.set_value(self.dpg_edge_theme_color[edge_name], color_edge)
+                for sub_node_name in subscribing_edge_publishing_node_name_list:
+                    dpg.set_value(self.dpg_node_theme_color[sub_node_name], color_sub)
+
     def cb_wheel(self, sender, app_data):
         """
         callback function for mouse wheel in node editor(Dear PyGui)
         zoom in/out graph according to wheel direction
-        """    
+        """
 
         # Save current layout in normalized coordinate
         for node_name, node_id in self.dpg_node_id_dict.items():
