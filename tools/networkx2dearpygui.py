@@ -236,22 +236,14 @@ class networkx2dearpygui:
                 dpg.bind_item_font(node_id, self.font_list[self.font_size])
 
 if __name__ == '__main__':
-    # Create a graph
     G = nx.DiGraph()
     nx.add_path(G, ['3', '5', '4', '1', '0', '2'])
     nx.add_path(G, ['3', '0', '4', '2', '1', '5'])
-
-    # layout = nx.spring_layout(G)
-    # layout = nx.nx_pydot.graphviz_layout(G, prog='dot')
-    layout = nx.nx_pydot.pydot_layout(G, prog='fdp')       # 'dot', 'twopi', 'fdp', 'sfdp', 'circo'
+    layout = nx.spring_layout(G)
     for key, val in layout.items():
-        layout[key] = list(val)
+        G.nodes[key]['pos'] = list(val)
+    app_setting = {
+        "font": "/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf"
+    }
+    networkx2dearpygui(app_setting, G)
 
-    # Draw the graph using Dear PyGui Node Editor
-    dpg.create_context()
-    networkx2dearpygui(G, layout)
-    dpg.create_viewport(width=1920, height=1080)
-    dpg.setup_dearpygui()
-    dpg.show_viewport()
-    dpg.start_dearpygui()
-    dpg.destroy_context()
