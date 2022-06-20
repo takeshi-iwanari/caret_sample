@@ -293,5 +293,41 @@ private:
   int data_;
 };
 
+class NodeSubStorePubTimer2 : public rclcpp::Node
+{
+public:
+  NodeSubStorePubTimer2(std::string node_name, std::string sub_topic_name, std::string pub_topic_name, int latency_ms = 2, int period_timer_ms_1 = 50, int latency_timer_ms_1 = 1, int period_timer_ms_2 = 20, int latency_timer_ms_2 = 2)
+  : Node(node_name), data_src_(0), data_timer_1_(0)
+  {
+    pub_ = create_publisher<std_msgs::msg::Int32>(pub_topic_name, QOS_HISTORY_SIZE);
+    sub_ = create_subscription<std_msgs::msg::Int32>(sub_topic_name, QOS_HISTORY_SIZE,
+      [=](std_msgs::msg::Int32::UniquePtr msg)
+      {
+        rclcpp::sleep_for(make_jitter(latency_ms, 0.2));
+        data_src_ = msg->data;
+      });
+    timer_1_ = create_wall_timer(std::chrono::milliseconds(period_timer_ms_1),[=]()
+      {
+        rclcpp::sleep_for(make_jitter(latency_timer_ms_1, 0.2));
+        data_timer_1_ = data_src_ * 2;
+      });
+    timer_2_ = create_wall_timer(std::chrono::milliseconds(period_timer_ms_2),[=]()
+      {
+        rclcpp::sleep_for(make_jitter(latency_timer_ms_2, 0.2));
+        auto msg = std_msgs::msg::Int32();
+        msg.data = data_timer_1_ * 2;
+        pub_->publish(msg);
+
+      });
+
+  }
+
+private:
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_;
+  rclcpp::TimerBase::SharedPtr timer_1_, timer_2_;
+  int data_src_;
+  int data_timer_1_;
+};
 
 }
