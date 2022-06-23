@@ -7,5 +7,5 @@
 sudo apt install graphviz graphviz-dev
 pip3 install -r requirements.txt
 
-python3 architecture_visualizer.py --architecture_yaml_file architecture.yaml --target_path all
+python3 architecture_visualizer.py --architecture_yaml_file architecture.yaml
 ```
