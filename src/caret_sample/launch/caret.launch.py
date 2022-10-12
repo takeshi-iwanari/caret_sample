@@ -10,7 +10,7 @@ from distutils.util import strtobool
 def generate_launch_description():
   caret_session = ""
   caret_event = ["ros2*"]
-  caret_light = False
+  caret_light = True
 
   for arg in sys.argv:
     if arg.startswith("caret_session:="):

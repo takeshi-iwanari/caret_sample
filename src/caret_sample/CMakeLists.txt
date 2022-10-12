@@ -28,6 +28,8 @@ create_sample("sample_store_timer_2")
 create_sample("sample_sub1pubtimer3")
 create_sample("sample_feedback")
 create_sample("sample_store_timer_cb2")
+create_sample("sample_split")
+create_sample("sample_drop_split")
 
 install(
   DIRECTORY launch
