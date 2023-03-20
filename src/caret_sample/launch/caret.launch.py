@@ -24,13 +24,18 @@ def generate_launch_description():
 
   if caret_light:
     caret_event = [ "ros2:*callback*",
-                    "ros2:dispatch*",
-                    "ros2:rclcpp*" ,
-                    "ros2_caret:rmw*",
-                    "*callback_group*",
-                    "ros2_caret:*executor",
-                    "ros2_caret:dds_bind*",
-                    "ros2:rcl_*init"]
+                "ros2:dispatch*",
+                "ros2:rclcpp*",
+                "ros2:rcl_*init",
+                "*callback_group*",
+                "ros2_caret:*callback*",
+                "ros2_caret:dispatch*",
+                "ros2_caret:rclcpp*",
+                "ros2_caret:rcl_*init",
+                "ros2_caret:rmw*",
+                "ros2_caret:*executor",
+                "ros2_caret:dds_bind*",
+    ]
 
   if caret_session == "":
     dt_now = datetime.datetime.now()

@@ -30,6 +30,7 @@ create_sample("sample_feedback")
 create_sample("sample_store_timer_cb2")
 create_sample("sample_split")
 create_sample("sample_drop_split")
+create_sample("test_stacked_bar")
 
 install(
   DIRECTORY launch
